@@ -55,11 +55,19 @@ html = """<!DOCTYPE html>
           const data = await resp.json();
           const address = data.display_name || JSON.stringify(data.address, null, 2);
           resultEl.textContent = `Coordinates: ${lat}, ${lon}\nAddress: ${address}`;
-        } catch (err) {
-          resultEl.textContent = 'Error: ' + err.message;
+        } catch (fetchErr) {
+          resultEl.textContent = 'Error fetching address: ' + fetchErr.message;
         }
       }, (err) => {
-        resultEl.textContent = 'Error getting location: ' + err.message;
+        let message = 'Error getting location: ' + err.message;
+        if (err.code === 1) { // PERMISSION_DENIED
+          message = 'Error: Geolocation permission denied. Please check your browser and system location settings for this website and ensure permission is granted.';
+        } else if (err.code === 2) { // POSITION_UNAVAILABLE
+          message = 'Error: Location information is unavailable. Please ensure your location services are enabled and try again.';
+        } else if (err.code === 3) { // TIMEOUT
+          message = 'Error: The request to get user location timed out. Please try again.';
+        }
+        resultEl.textContent = message;
       }, {
         enableHighAccuracy: true,
         timeout: 10000
