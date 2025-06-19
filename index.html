@@ -8,16 +8,31 @@
     body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
     h1 { font-size: 1.5em; }
     button { padding: 10px 20px; font-size: 1em; }
+    input[type="text"] { padding: 8px; font-size: 1em; margin-bottom: 10px; width: calc(100% - 20px); box-sizing: border-box; }
     pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
     /* Added style for version info */
     #version-info { font-size: 0.8em; color: #666; text-align: center; margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee; }
+    .section { margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px dashed #ccc; }
+    .section:last-of-type { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
   </style>
 </head>
 <body>
   <h1 id="app-name">GeoApp</h1>
-  <p>Tap the button to get your address.</p>
-  <button id="locateBtn">Get Address</button>
-  <pre id="result"></pre>
+
+  <div class="section">
+    <h2>Geolocation to Address</h2>
+    <p>Tap the button to get your address.</p>
+    <button id="locateBtn">Get Address</button>
+    <pre id="result"></pre>
+  </div>
+
+  <div class="section">
+    <h2>Search Rightmove by Postcode</h2>
+    <input type="text" id="postcodeInput" placeholder="Enter UK Postcode (e.g., SW1A 1AA)">
+    <button id="searchRightmoveBtn">Get Rightmove Link</button>
+    <pre id="postcodeResult"></pre>
+  </div>
+
   <!-- Added element for version info -->
   <p id="version-info"></p>
 
@@ -26,7 +41,7 @@
     // IMPORTANT: Manually update this value when you push new changes to GitHub.
     // You can use a date, a version number, or a combination.
     // Example: "v1.0.1 - 2024-03-15 14:30 UTC" or "V5"
-    const appDisplayVersion = "V6"; // <-- MANUALLY EDIT THIS LINE (or as requested)
+    const appDisplayVersion = "V7"; // <-- MANUALLY EDIT THIS LINE (or as requested)
     document.getElementById('version-info').textContent = appDisplayVersion;
     // --- END: Version Information ---
 
@@ -105,6 +120,63 @@
         timeout: 10000
       });
     });
+
+    // --- START: Rightmove Postcode Search ---
+    const postcodeResultEl = document.getElementById('postcodeResult');
+    document.getElementById('searchRightmoveBtn').addEventListener('click', async () => {
+      const postcode = document.getElementById('postcodeInput').value.trim();
+      if (!postcode) {
+        postcodeResultEl.textContent = 'Please enter a postcode.';
+        return;
+      }
+
+      postcodeResultEl.textContent = 'Searching Rightmove...';
+
+      const formattedPostcode = postcode.toLowerCase().replace(/\s+/g, '-');
+      const rightmoveUrl = `https://www.rightmove.co.uk/house-prices/${formattedPostcode}.html`;
+
+      // IMPORTANT: Direct fetch will likely be blocked by CORS.
+      // You might need to use a CORS proxy.
+      // Example: const proxyUrl = 'https://your-cors-proxy.example.com/';
+      // const fetchUrl = proxyUrl + rightmoveUrl;
+      const fetchUrl = rightmoveUrl; // Using direct URL, likely to fail from browser
+
+      try {
+        // Note: The 'User-Agent' header might be needed if Rightmove blocks default fetch user agents.
+        // However, setting it from client-side JS for cross-origin requests is restricted.
+        // This is another reason why a server-side proxy is better, as it can set any headers.
+        const response = await fetch(fetchUrl);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error ${response.status} when fetching Rightmove page. This could be a CORS issue, an invalid postcode, or the page structure changed.`);
+        }
+
+        const htmlText = await response.text();
+
+        // Regex to find __PRELOADED_STATE__
+        const regex = /__PRELOADED_STATE__\s*=\s*({.*?});?\s*<\/script>/i; // Adjusted regex
+        const match = htmlText.match(regex);
+
+        if (match && match[1]) {
+          const preloadedStateJSON = match[1];
+          const state = JSON.parse(preloadedStateJSON);
+
+          if (state && state.searchLocation && state.searchLocation.locationId) {
+            const locId = state.searchLocation.locationId;
+            const searchLink = `https://www.rightmove.co.uk/property-for-sale/find.html?locationIdentifier=POSTCODE^${locId}`;
+            postcodeResultEl.innerHTML = `Rightmove Search Link: <a href="${searchLink}" target="_blank" rel="noopener noreferrer">${searchLink}</a>`;
+          } else {
+            postcodeResultEl.textContent = 'Error: Could not find locationId in Rightmove data. The page structure might have changed or the postcode is invalid.';
+          }
+        } else {
+          postcodeResultEl.textContent = 'Error: Could not find __PRELOADED_STATE__ in Rightmove page. The page structure might have changed, the content is not as expected, or the postcode is invalid.';
+        }
+      } catch (err) {
+        postcodeResultEl.textContent = 'Error: ' + err.message + '\n\nNote: Fetching directly from Rightmove in the browser is often blocked by CORS. A CORS proxy or server-side solution might be needed for this feature to work reliably.';
+      }
+    });
+    // --- END: Rightmove Postcode Search ---
+
   </script>
 </body>
 </html>
