@@ -31,7 +31,7 @@
 
   <script>
     // --- START: Version Information ---
-    const appDisplayVersion = "V10"; // Updated version
+    const appDisplayVersion = "V12"; // Updated version
     document.getElementById('version-info').textContent = appDisplayVersion;
     // --- END: Version Information ---
 
@@ -141,19 +141,13 @@
           }
 
           if (!rightmoveSuccess) {
-            // 3. Fallback to Zoopla: Try to open Zoopla link directly
-            resultEl.textContent = `Rightmove search failed or could not determine specific location ID for postcode ${postcode}.\nAttempting to open Zoopla search in a new tab...`;
+            // 3. Fallback to Zoopla: Redirect current page
+            resultEl.textContent = `Rightmove search failed or could not determine specific location ID for postcode ${postcode}.\nRedirecting to Zoopla search...`;
             
             const slug = postcode.toLowerCase().replace(/\s+/g, '-');
             const zooplaSearchTypePath = searchType === 'sale' ? 'for-sale' : 'to-rent';
             const zooplaUrl = `https://www.zoopla.co.uk/${zooplaSearchTypePath}/property/${slug}/?radius=1&results_sort=newest_listings&search_source=refine`; 
-
-            const zooplaWindow = window.open(zooplaUrl, '_blank');
-            if (zooplaWindow) {
-                resultEl.textContent += `\nZoopla search for ${postcode} should have opened. If not, please check your pop-up blocker.`;
-            } else {
-                resultEl.textContent += `\nCould not open Zoopla automatically (pop-up likely blocked). Please manually search for postcode ${postcode} on Zoopla.`;
-            }
+            window.location.href = zooplaUrl;
           }
 
         } catch (err) { 
