@@ -71,8 +71,29 @@
         }
       }, (err) => {
         let message = 'Error getting location: ' + err.message;
-        if (err.code === 1) { // PERMISSION_DENIED
-          message = 'Error: Geolocation permission denied. Please check your browser and system location settings for this website and ensure permission is granted.';
+        if (err.code === 1) { // PERMISSION_DENIED (err.PERMISSION_DENIED)
+          let helpText = "Error: Geolocation permission denied by you or your device settings.\n\n";
+          helpText += "To enable location access for this page (" + window.location.hostname + "), please check the following and then tap 'Get Address' again:\n\n";
+
+          helpText += "IPHONE/IPAD (iOS):\n";
+          helpText += "1. Go to: iPhone Settings > Privacy & Security > Location Services.\n";
+          helpText += "   - Ensure 'Location Services' (at the top) is ON.\n";
+          helpText += "   - Scroll down to find your browser ('Safari Websites', 'Chrome', 'Firefox') in the app list and tap it.\n";
+          helpText += "   - Select 'Ask Next Time Or When I Share' or 'While Using the App'.\n";
+          helpText += "2. If using Safari, ALSO check: iPhone Settings > Safari (scroll down to 'SETTINGS FOR WEBSITES') > Location.\n";
+          helpText += "   - Ensure '" + window.location.hostname + "' is not set to 'Deny'. Set to 'Ask' or 'Allow'.\n\n";
+
+          helpText += "ANDROID:\n";
+          helpText += "1. In your Browser (e.g., Chrome, Firefox):\n";
+          helpText += "   - Tap the menu (usually ⋮ or ☰) > Settings (or 'Settings and privacy').\n";
+          helpText += "   - Look for 'Site settings' (or 'Permissions') > 'Location'.\n";
+          helpText += "   - Find this site ('" + window.location.hostname + "') in the list (you might need to check 'Blocked').\n";
+          helpText += "   - Ensure its permission is set to 'Allow' or 'Ask'.\n";
+          helpText += "2. OR, in Android System Settings:\n";
+          helpText += "   - Go to: System Settings > Location (ensure 'Use location' or 'Location access' is ON).\n";
+          helpText += "   - Then: System Settings > Apps > See all apps > [Your Browser App] > Permissions > Location.\n";
+          helpText += "   - Select 'Allow only while using the app' or 'Ask every time'.\n\n";
+          message = helpText;
         } else if (err.code === 2) { // POSITION_UNAVAILABLE
           message = 'Error: Location information is unavailable. Please ensure your location services are enabled and try again.';
         } else if (err.code === 3) { // TIMEOUT
