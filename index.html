@@ -1,0 +1,71 @@
+# Recreate the HTML file for reverse geocoding
+html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GeoApp</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    h1 { font-size: 1.5em; }
+    button { padding: 10px 20px; font-size: 1em; }
+    pre { background: #f4f4f4; padding: 10px; white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+  <h1 id="app-name">GeoApp</h1>
+  <p>Tap the button to get your address via Nominatim (no key required).</p>
+  <button id="locateBtn">Get Address</button>
+  <pre id="result"></pre>
+
+  <script>
+    // Generate an app name based on the User-Agent
+    function getAppName() {
+      const ua = navigator.userAgent;
+      let device = 'Web';
+      if (/iPhone/.test(ua)) device = 'iPhone';
+      else if (/iPad/.test(ua)) device = 'iPad';
+      else if (/Android/.test(ua)) device = 'Android';
+      else if (/Windows/.test(ua)) device = 'Windows PC';
+      else if (/Mac/.test(ua)) device = 'Mac';
+      let browser = 'Browser';
+      if (/Safari/.test(ua) && !/Chrome/.test(ua)) browser = 'Safari';
+      else if (/Chrome/.test(ua)) browser = 'Chrome';
+      else if (/Firefox/.test(ua)) browser = 'Firefox';
+      else if (/OPR|Opera/.test(ua)) browser = 'Opera';
+      return `${device} ${browser} GeoApp`;
+    }
+    document.getElementById('app-name').textContent = getAppName();
+
+    const resultEl = document.getElementById('result');
+    document.getElementById('locateBtn').addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        resultEl.textContent = 'Geolocation not supported by your browser.';
+        return;
+      }
+      resultEl.textContent = 'Locating…';
+      navigator.geolocation.getCurrentPosition(async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        try {
+          const resp = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`
+          );
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          const data = await resp.json();
+          const address = data.display_name || JSON.stringify(data.address, null, 2);
+          resultEl.textContent = `Coordinates: ${lat}, ${lon}\nAddress: ${address}`;
+        } catch (err) {
+          resultEl.textContent = 'Error: ' + err.message;
+        }
+      }, (err) => {
+        resultEl.textContent = 'Error getting location: ' + err.message;
+      }, {
+        enableHighAccuracy: true,
+        timeout: 10000
+      });
+    });
+  </script>
+</body>
+</html>
+"""
